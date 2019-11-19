@@ -1,0 +1,56 @@
+---
+title: "class-11-19-2019"
+author: "Grace Rotondo"
+date: "11/19/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidymodels)
+library(dplyr)
+library(skimr)
+library(fs)
+library(purrr)
+library(tidyverse)
+```
+
+```{r}
+dir.create("raw-data")
+download.file(url = "https://github.com/TheUpshot/2018-live-poll-results/archive/master.zip", destfile = "master.zip")
+unzip("master.zip")
+
+```
+
+```{r}
+my_list <- fs::dir_ls("2018-live-poll-results-master/data/")
+
+raw <- map_dfr(my_list, read_csv, .id = "source",
+               col_types = 
+                    cols(
+                    .default = col_character(),
+                    turnout_scale = col_double(),
+                    turnout_score = col_double(),
+                    w_LV = col_double(),
+                    w_RV = col_double(),
+                    final_weight = col_double(),
+                    timestamp = col_datetime(format = "")
+                    ))
+
+fs::file_delete(c("master.zip", "2018-live-poll-results-master/data/"))
+```
+
+
+```{r}
+x <- raw %>% 
+  mutate(dvote = ifelse(response == "Dem", 1,0)) %>% 
+  mutate(female = ifelse(gender == "Female", 1,0)) %>% 
+  select(dvote, response, female, gender)
+```
+
+```{r}
+x %>% 
+  ggplot(aes(x = female, y = dvote)) +
+  geom_jitter()
+```
+
